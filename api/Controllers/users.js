@@ -7,27 +7,31 @@ exports.user_signUp = (req, res, next) => {
     User.find({ email: req.body.email })
         .exec()
         .then(user => {
-            if (user.length >= 1) {
+            console.log(req.body);
+            if (user.length >= 1 ) {
                 return res.status(409).json({
                     message: 'mail exit'
                 })
-            } else {
+            } 
+            
+                console.log("signup new");
                 bcrypt.hash(req.body.password, 10, (err, hash) => {
+                    console.log(hash);
                     if (err) {
+                        console.log("new signup error")
                         return res.status(500).json({
                             error: err
-
-                        });
-
-                    } else {
+                        })
+                    }
+                    else {
+                        console.log("creating new user");
                         const user = new User({
                             _id: new mongoose.Types.ObjectId(),
                             firstName: req.body.firstName,
                             lastName: req.body.lastName,
                             email: req.body.email,
-                            // password: req.body.password
                             password: hash
-                        });
+                        })
                         user
                             .save()
                             .then(result => {
@@ -44,7 +48,7 @@ exports.user_signUp = (req, res, next) => {
                             });
                     }
                 })
-            }
+            
         })
 }
 
@@ -173,20 +177,25 @@ exports.user_forget_password = (req, res, next) => {
         })
 }
 
-exports.user_reset_password=(req, res, next) => {
-    bcrypt.hash(req.body.password,10,(err,hash)=>{
-        if(err){
+exports.user_reset_password = (req, res, next) => {
+    bcrypt.hash(req.body.password, 10, (err, hash) => {
+        if (err) {
             return res.status(500).json({
-                error:err
+                error: err
             })
-        }else{
-            User.findOneAndUpdate({$and:[{
-                reset_password_token: req.body.reset_password_token,
-                email:req.body.email
-            }]},
+        } else {
+            User.findOneAndUpdate({
+                $and: [{
+                    reset_password_token: req.body.reset_password_token,
+                    email: req.body.email
+                }]
+            },
                 // reset_password_expires: Date.now() + 360000
-               {$set: {password:hash
-            }})
+                {
+                    $set: {
+                        password: hash
+                    }
+                })
                 .exec()
                 .then((result, err) => {
                     console.log(result)
@@ -203,9 +212,9 @@ exports.user_reset_password=(req, res, next) => {
                         })
                     }
                 }
-                ) 
+                )
         }
-    })  
+    })
 }
 
 

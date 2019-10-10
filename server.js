@@ -16,20 +16,22 @@ mongoose.connection.on("error", error => {
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-// app.use((req, res, next) => {
-//     res.header('Access-Control-Allow-Origin', '*');
-//     res.header('Allow-Control-Allow-Headers', 'Origin,X-Requested-with,Content-Type,Accept,Authorization ');
-//     if (req.method === 'OPTIONS') {
-//         res.header('Access-Control-Allow-Methods', 'PUT,POST,PATCH,DELETE,GET');
-//         return res.status(200).json({})
-//     } 
-// })
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Allow-Control-Allow-Headers', 'Origin,X-Requested-with,Content-Type,Accept,Authorization ');
+    if (req.method === 'OPTIONS') {
+        res.header('Access-Control-Allow-Methods', 'PUT,POST,PATCH,DELETE,GET');
+        return res.status(200).json({})
+    }
+    next(); 
 
+})
 // User CRUD 
 app.use('/user', userRoutes);
 // Product
 app.use('/product',userRoutes);
-
+//Order task 
+app.use('/order',userRoutes);
 // app.use((req, res, next) => {
 //     res.send("harirocks");
 // });

@@ -13,9 +13,12 @@ const nodemailer = require('nodemailer');
 // Model Scehema 
 const User = require('../model/usermodel');
 const Product = require('../model/userproduct');
+const Order = require('../model/userordermodel');
+//check Auth is a middleware 
 const checkAuth = require('../middleware/check_auth');
 // project Controller
 const userController = require('../Controllers/users');
+const productController = require('../Controllers/products');
 // Router for Userspecification
 router.post('/signup', userController.user_signUp);
 router.post('/login', userController.user_login);
@@ -25,115 +28,81 @@ router.delete('/:userId', userController.user_delete);
 // End Router for Userspecification
 
 //Router for productSpecification
-router.get('/', (req, res, next) => {
-    Product.find()
-        .exec()
-        .then(productList => {
-            const response = {
-                count: productList.length,
-                product: productList.map(list => {
-                    return {
-                        product_id: list.product_id,
-                        productName: list.productName,
-                        price: list.price,
-                        description: list.description,
-                        user: list.user
-
-                    }
-                })
-            }
-            res.status(200).json(response);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(404).json({
-                error: err
-            })
-        });
-});
-
-router.post('/newproduct',checkAuth,(req, res, next) => {
-    Product.findOne({ productName: req.body.productName })
-        .exec()
-        .then(result => {
-            if (result !== null) {
-                res.status(409).json({
-                    message: "Product already existed in the database"
-                })
-            }
-            else {
-                const product = new Product({
-                    product_id: new mongoose.Types.ObjectId(),
-                    productName: req.body.productName,
-                    price: req.body.price,
-                    description: req.body.description,
-                    user: req.body.user
-                });
-                product.save()
-                    .then(records => {
-                        res.status(201).json({
-                            message: "New product Created",
-                            record: records
-
-                        })
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        res.status(406).json({
-                            error: err
-                        })
-                    })
-            }
-        })
-});
-
-router.get('/product_get_details',(req, res, next) => {
-    Product.findOne({ $or: [{ product_id: req.body.product_id }, { productName: req.body.productName }] })
-        .populate('user', 'email firstName lastName')
-        .exec()
-        .then(records => {
-            if (records) {
-                res.status(200).json({
-                    product: records
-
-                });
-            }
-            else {
-                res.status(404).json({
-                    message: "No Such Product Found in the database"
-                })
-            }
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            })
-        })
-});
-
-router.post('/product_update',checkAuth ,(req, res, next) => {
-    Product.findOneAndUpdate({ $and: [{ productName: req.body.productName }, { product_id: req.body.product_id }] },
-        { $set: { price: req.body.price } }
-    )
-        .exec()
-        .then(result => {
-            res.status(200).json({
-                message: "price updated",
-                product: result
-            })
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            })
-        })
-
-});
-
+router.get('/', productController.get_all_products);
+router.post('/newproduct', checkAuth, productController.create_new_product);
+router.get('/product_get_details', productController.get_single_product_details);
+router.post('/product_update', checkAuth, productController.products_update);
 //End Router For ProductSpecification
 
+// Router for orderSpecification
+router.get('/get_all', async (req, res, next) => {
+    console.log("get all");
+   
+        const orderResponse = await Order.find();
+        console.log(orderResponse);
+        if (orderResponse) {
+            console.log("inside the orderrespons");
+            count = orderResponse.length;
+            console.log(count);
+            
+            orderResponse.map(orderlist => {
+                return {
+                    order_id: orderlist.order_id,
+                    order_quantity: orderlist.quantity,
+                    product: orderlist.product,
+                    price: orderlist.price,
+                    user_id: orderlist._id
+                }
+                
+            })
+        
+        console.log(orderResponse);
+            res.status(200).json(orderResponse);
+            
+        }
+    
+    // catch (err) {
+    //     console.log(err);
+    //     res.status(500).json({
+    //         error: err
+    //     })
+    // }
+})
+router.post('/newOrder', async (req, res, next) => {
+    console.log("inside new order");
+    try {
+        const product = await Product.findOne({ $or: [{ productName: req.body.productName }, { product_id: req.body.product_id }] });
+        console.log(product);
+       
+            console.log("if loop then ");
+            console.log(req.body);
+            const order = new Order({
+                _id: new mongoose.Types.ObjectId(),
+                product:product,
+                user:req.body.user,
+                quantity:req.body.quantity  
+            });
+            // const orderResponse={
+            //     orderRecords:order,
+            //     product:order.product
+            // }
+            // console.log(orderResponse);
+            const report= await order.save();   
+            console.log(report);
+        
+        res.status(200).json({
+            message:"order successfully created",
+             orders:report
+        })
+    }
+    catch (err) {
+        console.log(err);
+        res.status(500).json({
+            error: err
+        })
+    }
+})
+// End Router orderSpecification
 
 
 
